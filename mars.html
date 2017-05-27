@@ -1,0 +1,139 @@
+<html>
+    <head>
+    </head>
+    <body style="margin: 0em 0em">
+        <canvas id="canvas" style="float:left;">
+        </canvas>
+        <textarea id="basic" style="width: 30vw; height: 70vh;">
+10 fwd
+11 fwd
+15 rem
+20 goto 10
+        </textarea>
+        <textarea id="log" style="width: 30vw; height: 30vh;"></textarea>
+        <script>
+document.getElementById('basic').addEventListener('change', e => {
+    window.localStorage.setItem('code', e.target.value);
+})
+
+var allcode = window.localStorage.getItem("code");
+if (allcode) {
+    document.getElementById('basic').value = allcode;
+}
+
+var canvas = document.getElementById('canvas');
+canvas.width = document.body.clientWidth * 0.7;
+canvas.height = document.body.clientHeight;
+var context = canvas.getContext('2d');
+var centerX = canvas.width / 2;
+var centerY = canvas.height / 2;
+var radius = 200;
+
+function circle(cx, cy, r, start, stop) {
+    context.beginPath();
+    context.arc(cx, cy, r, start||0, stop||2 * Math.PI, false);
+    context.fill();
+    context.stroke();
+}
+
+
+context.fillStyle = 'green';
+context.lineWidth = 5;
+context.strokeStyle = '#003300';
+circle(centerX, centerY, radius);
+
+context.fillStyle = 'rgba(0,0,0,0)';
+
+function drawRobot(r, height) {
+    circle(centerX, centerY, radius+(height||3), r - 0.01, r + 0.01);
+}
+
+var chute1 = Math.round(Math.random() * 36)*10;
+var chute2 = Math.round(Math.random() * 36)*10;
+
+function isChute(r) {
+    return Math.abs(r - chute1) < 0.1 || Math.abs(r - chute2) < 0.1;
+}
+
+function log(str) {
+    document.getElementById('log').value += str+"\n";
+}
+
+var program = document.getElementById('basic').value.toLowerCase().split(/\n/g);
+var labels = {};
+for (var x in program) {
+    var regex = /^([0-9]+)? *(fwd|turn|goto|if chute goto|rem ?.*|sleep)? *([0-9]+)? *$/gi
+    var match = regex.exec(program[x]);
+    if (!match) {
+        log("Syntax Error: "+program[x]);
+    }
+    if (match[1]) labels[match[1]] = x;
+    program[x] = match;
+}
+var ctr = 0;
+
+var sameDir = Math.random() < 0.5;
+var maxspeed = 1 / 10;
+var r1 = {speed:0, dir:0, ip:0, pos:chute1, height:50};
+var r2 = {speed:0, dir:0, ip:0, pos:chute2, height:50};
+
+function runRobot(timestamp, r) {
+    context.strokeStyle = "#fff";
+    drawRobot(r.pos * Math.PI/180, r.height);
+
+    if (r.height > 3) {
+        r.height = r.height - 1;
+    }
+    else {
+
+        if (ctr == 0) {
+            while(1) {
+                var code = program[r.ip++];
+                log(code[0]);
+                switch (code[2]) {
+                    case "fwd":
+                        r.speed = r.dir ? maxspeed : -maxspeed;
+                        break;
+                    case "turn":
+                        r.dir = !r.dir;
+                        break;
+                    case "":
+                    case "rem":
+                        continue;
+                    case "stop":
+                        r.speed = 0;
+                        break;
+                    case "if chute goto":
+                        if (!isChute(r.pos)) break;
+                    case "goto":
+                        r.ip = labels[code[3]];
+                        continue;
+                    default:
+                        log("Invalid command: "+code[2]);
+                }
+                break;
+            }
+        }
+
+        r.pos += r.speed;
+    }
+
+    context.strokeStyle = "#030";
+    drawRobot(r.pos * Math.PI/180, r.height);
+}
+
+function drawFrame(timestamp) {
+
+    runRobot(timestamp, r1);
+    runRobot(timestamp, r2);
+    if (ctr++ == 100) ctr = 0;
+
+    window.requestAnimationFrame(drawFrame);
+}
+
+window.requestAnimationFrame(drawFrame);
+
+        </script>
+
+    </body>
+</html>
