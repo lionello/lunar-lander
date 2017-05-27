@@ -9,7 +9,7 @@
 11 fwd
 15 rem
 20 goto 10
-        </textarea>
+</textarea>
         <textarea id="log" style="width: 30vw; height: 30vh;"></textarea>
         <script>
 document.getElementById('basic').addEventListener('change', e => {
@@ -62,7 +62,7 @@ function log(str) {
 var program = document.getElementById('basic').value.toLowerCase().split(/\n/g);
 var labels = {};
 for (var x in program) {
-    var regex = /^([0-9]+)? *(fwd|turn|goto|if chute goto|rem ?.*|sleep)? *([0-9]+)? *$/gi
+    var regex = /^([0-9]+)? *(fwd|turn|goto|stop|if chute goto|rem ?.*|sleep)? *([0-9]+)? *$/gi
     var match = regex.exec(program[x]);
     if (!match) {
         log("Syntax Error: "+program[x]);
@@ -83,6 +83,7 @@ function runRobot(timestamp, r) {
 
     if (r.height > 3) {
         r.height = r.height - 1;
+        ctr = 0;
     }
     else {
 
@@ -100,6 +101,7 @@ function runRobot(timestamp, r) {
                     case "":
                     case "rem":
                         continue;
+                    case "sleep":
                     case "stop":
                         r.speed = 0;
                         break;
