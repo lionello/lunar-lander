@@ -5,10 +5,18 @@
         <canvas id="canvas" style="float:left;">
         </canvas>
         <textarea id="basic" style="width: 30vw; height: 70vh;">
+rem Simple basic, all commands are shown here.
+rem Line numbers are optional, only used by goto.
+
 10 fwd
-11 fwd
-15 rem
-20 goto 10
+20 if chute goto 100
+30 stop
+40 goto 10
+
+100 fwd
+110 fwd
+120 turn
+130 goto 100
 </textarea>
         <textarea id="log1" style="width: 15vw; height: 30vh; float: left;"></textarea>
         <textarea id="log2" style="width: 15vw; height: 30vh;"></textarea>
@@ -69,10 +77,12 @@ function log(str,id) {
 var program = document.getElementById('basic').value.toLowerCase().split(/\n/g);
 var labels = {};
 for (var x in program) {
-    var regex = /^([0-9]+)? *(fwd|turn|goto|stop|if chute goto|rem|sleep)? *([0-9]+)? *$/gi
+    var regex = /^([0-9]+)? *(fwd|turn|goto|stop|if chute goto|rem .*|sleep)? *([0-9]+)? *$/gi
     var match = regex.exec(program[x]);
     if (!match) {
-        log("Syntax Error: "+program[x]);
+        if (!program[x].startsWith('rem')) {
+            log("Syntax Error: "+program[x]);
+        }
     }
     else if (match[1]) labels[match[1]] = x;
     program[x] = match;
@@ -107,7 +117,6 @@ function runRobot(timestamp, r) {
                         continue;
                     case null:
                     case "":
-                    case "rem":
                         continue;
                     case "if chute goto":
                         if (!isChute(r.pos)) continue;
@@ -116,7 +125,10 @@ function runRobot(timestamp, r) {
                         r.ip = labels[code[3]];
                         if (r.ip != oldip) continue;
                     default:
+                        if (code[2].startsWith('rem'))
+                            continue;
                         log("Invalid command: "+code[0]);
+                    case undefined:
                     case "sleep":
                     case "stop":
                         r.speed = 0;
