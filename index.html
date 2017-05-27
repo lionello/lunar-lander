@@ -78,7 +78,7 @@ var ctr = 0;
 
 var sameDir = Math.random() < 0.5;
 var maxspeed = 1 / 10;
-var r1 = {speed:0, dir:0, ip:0, pos:chute1, height:50};
+var r1 = {speed:0, dir:sameDir, ip:0, pos:chute1, height:50};
 var r2 = {speed:0, dir:0, ip:0, pos:chute2, height:50};
 
 function runRobot(timestamp, r) {
@@ -87,7 +87,7 @@ function runRobot(timestamp, r) {
 
     if (r.height > 3) {
         r.height = r.height - 1;
-        ctr = 0;
+        ctr = -1;
     }
     else {
 
