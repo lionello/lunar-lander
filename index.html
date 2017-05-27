@@ -48,11 +48,12 @@ function drawRobot(r, height) {
     circle(centerX, centerY, radius+(height||3), r - 0.01, r + 0.01);
 }
 
-var chute1 = Math.round(Math.random() * 36)*10;
-var chute2 = Math.round(Math.random() * 36)*10;
+var chute1 = 0;//Math.round(Math.random() * 36)*10;
+var chute2 = 180;//Math.round(Math.random() * 36)*10;
 
 function sameSpot(p1, p2) {
-    return Math.abs(p1 - p2) < 0.1;
+    var diff = Math.abs(p1 - p2) % 360;
+    return diff < 0.1 || diff > 359.9;
 }
 
 function isChute(r) {
@@ -60,32 +61,32 @@ function isChute(r) {
 }
 
 function log(str) {
-    document.getElementById('log').value += str+"\n";
+    document.getElementById('log').value = str+"\n" + document.getElementById('log').value;
 }
 
 var program = document.getElementById('basic').value.toLowerCase().split(/\n/g);
 var labels = {};
 for (var x in program) {
-    var regex = /^([0-9]+)? *(fwd|turn|goto|stop|if chute goto|rem ?.*|sleep)? *([0-9]+)? *$/gi
+    var regex = /^([0-9]+)? *(fwd|turn|goto|stop|if chute goto|rem|sleep)? *([0-9]+)? *$/gi
     var match = regex.exec(program[x]);
     if (!match) {
         log("Syntax Error: "+program[x]);
     }
-    if (match[1]) labels[match[1]] = x;
+    else if (match[1]) labels[match[1]] = x;
     program[x] = match;
 }
 var ctr = 0;
 
-var sameDir = Math.random() < 0.5;
-var maxspeed = 1 / 10;
-var r1 = {speed:0, dir:sameDir, ip:0, pos:chute1, height:50};
-var r2 = {speed:0, dir:0, ip:0, pos:chute2, height:50};
+var sameDir = 0;//Math.random() < 0.5;
+var maxspeed = 0.25;
+var r1 = {speed:0, dir:sameDir, ip:0, pos:chute1, height:50, color:"#008"};
+var r2 = {speed:0, dir:0, ip:0, pos:chute2, height:50, color:"#800"};
 
 function runRobot(timestamp, r) {
     context.strokeStyle = "#fff";
     drawRobot(r.pos * Math.PI/180, r.height);
 
-    if (r.height > 3) {
+    if (r.height > 4) {
         r.height = r.height - 1;
         ctr = -1;
     }
@@ -102,20 +103,22 @@ function runRobot(timestamp, r) {
                     case "turn":
                         r.dir = !r.dir;
                         break;
+                    case null:
                     case "":
                     case "rem":
                         continue;
+                    case "if chute goto":
+                        if (!isChute(r.pos)) continue;
+                    case "goto":
+                        var oldip = r.ip-1;
+                        r.ip = labels[code[3]];
+                        if (r.ip != oldip) continue;
+                    default:
+                        log("Invalid command: "+code[0]);
                     case "sleep":
                     case "stop":
                         r.speed = 0;
                         break;
-                    case "if chute goto":
-                        if (!isChute(r.pos)) break;
-                    case "goto":
-                        r.ip = labels[code[3]];
-                        continue;
-                    default:
-                        log("Invalid command: "+code[2]);
                 }
                 break;
             }
@@ -124,7 +127,7 @@ function runRobot(timestamp, r) {
         r.pos += r.speed;
     }
 
-    context.strokeStyle = "#030";
+    context.strokeStyle = r.color;
     drawRobot(r.pos * Math.PI/180, r.height);
 }
 
@@ -132,11 +135,13 @@ function drawFrame(timestamp) {
 
     runRobot(timestamp, r1);
     runRobot(timestamp, r2);
-    if (ctr++ == 100) ctr = 0;
-
+    if (++ctr == 40) ctr = 0;
 
     if (!sameSpot(r1.pos, r2.pos)) {
         window.requestAnimationFrame(drawFrame);
+    }
+    else {
+        log("Found you!");
     }
 }
 
