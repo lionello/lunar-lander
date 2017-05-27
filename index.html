@@ -51,8 +51,12 @@ function drawRobot(r, height) {
 var chute1 = Math.round(Math.random() * 36)*10;
 var chute2 = Math.round(Math.random() * 36)*10;
 
+function sameSpot(p1, p2) {
+    return Math.abs(p1 - p2) < 0.1;
+}
+
 function isChute(r) {
-    return Math.abs(r - chute1) < 0.1 || Math.abs(r - chute2) < 0.1;
+    return sameSpot(r, chute1) || sameSpot(r, chute2);
 }
 
 function log(str) {
@@ -130,7 +134,10 @@ function drawFrame(timestamp) {
     runRobot(timestamp, r2);
     if (ctr++ == 100) ctr = 0;
 
-    window.requestAnimationFrame(drawFrame);
+
+    if (!sameSpot(r1.pos, r2.pos)) {
+        window.requestAnimationFrame(drawFrame);
+    }
 }
 
 window.requestAnimationFrame(drawFrame);
