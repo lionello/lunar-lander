@@ -1,16 +1,44 @@
+<!DOCTYPE html>
 <html>
     <head>
+        <style>
+body {
+    margin: 0em 0em;
+}
+textarea {
+    margin: -3px -3px;
+    border-width: 1px;
+}
+#canvas {
+    float: left;
+}
+#basic {
+    width: 30vw;
+    height: 70vh;
+}
+#log1 {
+    color: red;
+    width: 15vw;
+    height: 30vh;
+    float: left;
+}
+#log2 {
+    color: blue;
+    width: 15vw;
+    height: 30vh;
+}
+        </style>
     </head>
-    <body style="margin: 0em 0em">
-        <canvas id="canvas" style="float:left;">
-        </canvas>
-        <textarea id="basic" style="width: 30vw; height: 70vh;">
+    <body>
+        <a href="https://github.com/lionello/lunar-lander/"><img style="position: absolute; top: 0; left: 0; border: 0;" src="https://camo.githubusercontent.com/567c3a48d796e2fc06ea80409cc9dd82bf714434/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f6c6566745f6461726b626c75655f3132313632312e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_left_darkblue_121621.png"></a>
+        <canvas id="canvas">No HTML5?</canvas>
+        <textarea id="basic">
 rem Simple basic, all commands are shown here.
 rem Line numbers are optional, only used by goto.
 
 10 fwd
 20 if chute goto 100
-30 stop
+30 sleep
 40 goto 10
 
 100 fwd
@@ -18,8 +46,8 @@ rem Line numbers are optional, only used by goto.
 120 turn
 130 goto 100
 </textarea>
-        <textarea id="log1" style="width: 15vw; height: 30vh; float: left;"></textarea>
-        <textarea id="log2" style="width: 15vw; height: 30vh;"></textarea>
+        <textarea id="log1"></textarea>
+        <textarea id="log2"></textarea>
         <script>
 document.getElementById('basic').addEventListener('change', e => {
     window.localStorage.setItem('code', e.target.value);
@@ -31,7 +59,7 @@ if (allcode) {
 }
 
 var canvas = document.getElementById('canvas');
-canvas.width = document.body.clientWidth * 0.7;
+canvas.width = document.body.clientWidth * 7 / 10;
 canvas.height = document.body.clientHeight;
 var context = canvas.getContext('2d');
 var centerX = canvas.width / 2;
@@ -57,8 +85,8 @@ function drawRobot(r, height) {
     circle(centerX, centerY, radius+(height||3), r - 0.01, r + 0.01);
 }
 
-var chute1 = 0;//Math.round(Math.random() * 36)*10;
-var chute2 = 180;//Math.round(Math.random() * 36)*10;
+var chute1 = 0;
+var chute2 = Math.trunc(1 + Math.random() * 35)*10;
 
 function sameSpot(p1, p2) {
     var diff = Math.abs(p1 - p2) % 360;
@@ -74,19 +102,22 @@ function log(str,id) {
     document.getElementById('log'+id).value = str+"\n" + document.getElementById('log'+id).value;
 }
 
+// Replace consecutive whitespace with a single space
 var program = document.getElementById('basic').value.toLowerCase().split(/\n/g);
 var labels = {};
-for (var x in program) {
-    var regex = /^([0-9]+)? *(fwd|turn|goto|stop|if chute goto|rem .*|sleep)? *([0-9]+)? *$/gi
-    var match = regex.exec(program[x]);
+program = program.map(function(line,index) {
+    var regex = /^ *([0-9]+)? *(if chute )?(fwd|turn|goto|stop|rem.*|sleep) *([0-9]+)? *$/gi
+    var match = regex.exec(line);
     if (!match) {
-        if (!program[x].startsWith('rem')) {
-            log("Syntax Error: "+program[x]);
-        }
+        if (line !== '') log("Syntax Error: "+line);
     }
-    else if (match[1]) labels[match[1]] = x;
-    program[x] = match;
-}
+    else {
+        // Record the label (if any)
+        if (match[1]) labels[match[1]] = index;
+        if (match[3].startsWith('rem')) match[2]="";
+    }
+    return match;
+});
 var ctr = 0;
 
 var sameDir = 0;//Math.random() < 0.5;
@@ -105,33 +136,30 @@ function runRobot(timestamp, r) {
     else {
 
         if (ctr == 0) {
-            while(1) {
+            r.speed = 0;
+            for (var max=0; max<9; ++max) {
                 var code = program[r.ip++];
+                if (!code) {
+                    continue;
+                }
                 log(code[0], r.id);
-                switch (code[2]) {
+                if (code[2] === 'if chute ') {
+                    if (!isChute(r.pos))
+                        continue;
+                }
+                switch (code[3]) {
                     case "fwd":
                         r.speed = r.dir ? maxspeed : -maxspeed;
                         break;
                     case "turn":
                         r.dir = !r.dir;
                         continue;
-                    case null:
-                    case "":
-                        continue;
-                    case "if chute goto":
-                        if (!isChute(r.pos)) continue;
                     case "goto":
                         var oldip = r.ip-1;
-                        r.ip = labels[code[3]];
+                        r.ip = labels[code[4]];
                         if (r.ip != oldip) continue;
-                    default:
-                        if (code[2].startsWith('rem'))
-                            continue;
-                        log("Invalid command: "+code[0]);
-                    case undefined:
                     case "sleep":
                     case "stop":
-                        r.speed = 0;
                         break;
                 }
                 break;
@@ -155,7 +183,8 @@ function drawFrame(timestamp) {
         window.requestAnimationFrame(drawFrame);
     }
     else {
-        log("Found you!");
+        log("Found you!",1);
+        log("Found you!",2);
     }
 }
 
