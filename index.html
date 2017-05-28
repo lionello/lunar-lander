@@ -86,7 +86,7 @@ function drawRobot(r, height) {
 }
 
 var chute1 = 0;
-var chute2 = Math.trunc(1 + Math.random() * 35)*10;
+var chute2 = 170;//Math.trunc(1 + Math.random() * 35)*10;
 
 function sameSpot(p1, p2) {
     var diff = Math.abs(p1 - p2) % 360;
@@ -114,7 +114,7 @@ program = program.map(function(line,index) {
     else {
         // Record the label (if any)
         if (match[1]) labels[match[1]] = index;
-        if (match[3].startsWith('rem')) match[2]="";
+        if (match[3].startsWith('rem')) return null;
     }
     return match;
 });
