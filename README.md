@@ -6,8 +6,8 @@ Available commands:
 * `fwd`
 * `turn`
 * `sleep`
-* `if chute goto #`
+* `if chute ...`
 * `goto #`
-* `rem`
+* `rem ...`
 
 Hosted on GitHub pages: http://www.lunesu.com/lunar-lander/
